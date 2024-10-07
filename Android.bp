@@ -1,0 +1,23 @@
+package {
+    default_applicable_licenses: ["external_jspecify_license"],
+}
+
+license {
+    name: "external_jspecify_license",
+    visibility: [":__subpackages__"],
+    license_kinds: ["SPDX-license-identifier-Apache-2.0"],
+    license_text: ["LICENSE"],
+}
+
+java_library {
+    name: "jspecify",
+    host_supported: true,
+    srcs: ["src/main/**/*.java"],
+    sdk_version: "current",
+    // b/267831518: Pin tradefed and dependencies to Java 11.
+    java_version: "11",
+    visibility: [
+        "//external/jsoup:__subpackages__",
+        "//external/truth:__subpackages__",
+    ],
+}
