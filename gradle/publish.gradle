@@ -1,0 +1,83 @@
+/*
+ * Copyright 2020 The JSpecify Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+// run `./gradlew publishToMavenLocal` to install artifact to your Local Maven Repository
+
+apply plugin: 'maven-publish'
+apply plugin: 'signing'
+apply plugin: 'io.github.gradle-nexus.publish-plugin'
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            pom {
+                groupId = 'org.jspecify'
+                artifactId = 'jspecify'
+                name = 'JSpecify annotations'
+                description = 'An artifact of well-named and well-specified annotations to power static analysis checks'
+                url = 'http://jspecify.org/'
+                from components.java
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                scm {
+                    connection = 'scm:git:git@github.com:jspecify/jspecify.git'
+                    developerConnection = 'scm:git:git@github.com:jspecify/jspecify.git'
+                    url = 'https://github.com/jspecify/jspecify/'
+                }
+                developers {
+                    // These are here only because Sonatype requires us to list someone.
+                    // Any project member is welcome to add themselves if they want to.
+                    developer {
+                        id = 'kevinb9n'
+                        name = 'Kevin Bourrillion'
+                        email = 'kevinb9n@gmail.com'
+                    }
+                }
+            }
+        }
+    }
+}
+
+nexusPublishing {
+    repositories {
+        // The following line causes the `The Project.getConvention() method has been deprecated.` warning.
+        // The `gradle-nexus` plugin still is on [gradle 8.2.1](https://github.com/gradle-nexus/publish-plugin/blob/c2614e3a5fd61008c66633ca061760df8d4a5106/gradle/wrapper/gradle-wrapper.properties#L4).
+        // I tracked down the deprecation warning to the `sonatype` block, but didn't find a way to avoid the warning.
+        sonatype {
+            // For users registered in Sonatype after 24 Feb 2021
+            nexusUrl = uri("https://s01.oss.sonatype.org/service/local/")
+            snapshotRepositoryUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+        }
+    }
+}
+
+def privateKey = findProperty('privateKey')
+def pgpPassword = findProperty('pgpPassword')
+
+signing {
+    useInMemoryPgpKeys(privateKey, pgpPassword)
+    sign publishing.publications.mavenJava
+}
+
+tasks.withType(Sign).configureEach {
+    onlyIf {
+        privateKey?.trim() && pgpPassword?.trim()
+    }
+}

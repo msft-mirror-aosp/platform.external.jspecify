@@ -1,0 +1,77 @@
+/*
+ * Copyright 2021 The JSpecify Authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * This build configuration generates two integration test tasks: integrationTest and integrationTestOnJava8.
+ * These tasks share the integrationTest sourceSets, which contains test cases implemented with the JUnit Jupiter API.
+ */
+
+sourceSets {
+    // The source set for integration test that depends on the generated multi-release jar file
+    integrationTest {
+        java {
+            srcDirs = ['src/integrationTest/java']
+        }
+        compileClasspath += tasks.jar.outputs.files // need to depend on not classes dirs but a jar file
+        runtimeClasspath += tasks.jar.outputs.files
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom implementation
+    integrationTestRuntimeOnly.extendsFrom runtimeOnly
+}
+
+dependencies {
+    integrationTestImplementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
+    integrationTestRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+    integrationTestRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.7.0'
+    errorprone "com.google.errorprone:error_prone_core:${errorproneVersion}"
+}
+
+tasks.named('compileIntegrationTestJava', JavaCompile).configure {
+    // compiled tests will run with both Java 8 and 9+
+    options.release = 8
+}
+
+def integrationTestOnJava8 = tasks.register("integrationTestOnJava8", Test)
+integrationTestOnJava8.configure {
+    group 'Verification'
+    description 'Runs the integration tests with JDK8, to verify the support for Java without jigsaw.'
+
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    useJUnitPlatform()
+
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(8)
+    }
+}
+
+def integrationTest = tasks.register("integrationTest", Test)
+integrationTest.configure {
+    group 'Verification'
+    description 'Runs the integration tests with JDK9+, to verify the support for Java without jigsaw.'
+
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    useJUnitPlatform()
+}
+
+tasks.named('check').configure {
+    dependsOn integrationTest
+    dependsOn integrationTestOnJava8
+}
