@@ -1,0 +1,103 @@
+name: Build
+
+# Requires:
+#
+# * A repository variable named REFERENCE_CHECKER_REPO with the name of the reference checker repo
+#    within this fork of JSpecify.
+
+on:
+  push:
+    branches: [main, 'dev-*']
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
+    branches: [main, 'dev-*']
+    paths-ignore:
+      - 'docs/**'
+
+defaults:
+  run:
+    shell: bash --noprofile --norc -e -o pipefail -x {0}
+
+jobs:
+  build:
+    name: JDK ${{ matrix.java_version }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java_version: [11, 17, 21]
+        experimental: [false]
+    env:
+      JAVA_VERSION: ${{ matrix.java_version }}
+    continue-on-error: ${{ matrix.experimental }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gradle/wrapper-validation-action@v3
+      - name: Set up JDK ${{ matrix.java_version }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java_version }}
+          cache: gradle
+      - run: |
+          ./gradlew spotlessCheck build publishToMavenLocal --no-daemon
+
+  publish-snapshot:
+    name: Publish Conformance Tests Snapshot
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.repository == 'jspecify/jspecify' && github.ref_name == 'main' && github.event_name == 'push'
+    env:
+      JAVA_VERSION: 17
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Set up Gradle
+        uses: gradle/gradle-build-action@v3
+      - name: Publish conformance tests snapshot
+        run: ./gradlew publishConformanceTestsPublicationToSonatypeRepository
+        env:
+          ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.sonatype_username }}
+          ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.sonatype_password }}
+
+  reference-checker-tests:
+    name: Run Reference Checker Tests
+    runs-on: ubuntu-latest
+    env:
+      reference_checker_repo: ${{ vars.reference_checker_repo || 'jspecify-reference-checker' }}
+      JAVA_VERSION: 17
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          path: jspecify
+      - name: Check out the reference checker
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/${{ env.reference_checker_repo }}
+          path: ${{ env.reference_checker_repo }}
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+      - name: Run Conformance Tests
+        if: github.base_ref == 'main' # only PRs onto main
+        continue-on-error: true
+        uses: gradle/gradle-build-action@v3
+        with:
+          arguments: conformanceTests
+          build-root-directory: ${{ env.reference_checker_repo }}
+      - name: Run Samples Tests
+        # only PRs onto samples-google-prototype
+        if: github.base_ref == 'samples-google-prototype'
+        continue-on-error: true
+        uses: gradle/gradle-build-action@v3
+        with:
+          arguments: jspecifySamplesTest
+          build-root-directory: ${{ env.reference_checker_repo }}
