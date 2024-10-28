@@ -19,5 +19,6 @@ java_library {
     visibility: [
         "//external/jsoup:__subpackages__",
         "//external/truth:__subpackages__",
+        "//prebuilts/sdk/current/androidx/m2repository/androidx:__subpackages__",
     ],
 }
