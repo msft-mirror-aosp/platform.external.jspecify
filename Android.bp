@@ -14,7 +14,7 @@ java_library {
     host_supported: true,
     srcs: ["src/main/**/*.java"],
     sdk_version: "current",
-    min_sdk_version: "apex_inherit",
+    min_sdk_version: "1",
     // b/267831518: Pin tradefed and dependencies to Java 11.
     java_version: "11",
     visibility: [
