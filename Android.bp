@@ -22,4 +22,8 @@ java_library {
         "//external/truth:__subpackages__",
         "//prebuilts/sdk/current/androidx/m2repository/androidx:__subpackages__",
     ],
+    apex_available: [
+        "//apex_available:anyapex",
+        "//apex_available:platform"
+    ],
 }
