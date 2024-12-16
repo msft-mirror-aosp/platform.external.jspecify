@@ -20,6 +20,7 @@ java_library {
     visibility: [
         "//external/jsoup:__subpackages__",
         "//external/truth:__subpackages__",
+        "//external/turbine:__subpackages__",
         "//prebuilts/sdk/current/androidx/m2repository/androidx:__subpackages__",
     ],
     apex_available: [
