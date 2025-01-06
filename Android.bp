@@ -13,13 +13,19 @@ java_library {
     name: "jspecify",
     host_supported: true,
     srcs: ["src/main/**/*.java"],
-    sdk_version: "current",
-    min_sdk_version: "apex_inherit",
+    sdk_version: "core_current",
+    min_sdk_version: "1",
     // b/267831518: Pin tradefed and dependencies to Java 11.
     java_version: "11",
     visibility: [
         "//external/jsoup:__subpackages__",
         "//external/truth:__subpackages__",
+        "//external/turbine:__subpackages__",
+        "//packages/modules:__subpackages__",
         "//prebuilts/sdk/current/androidx/m2repository/androidx:__subpackages__",
+    ],
+    apex_available: [
+        "//apex_available:anyapex",
+        "//apex_available:platform",
     ],
 }
