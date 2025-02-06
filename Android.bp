@@ -18,6 +18,7 @@ java_library {
     // b/267831518: Pin tradefed and dependencies to Java 11.
     java_version: "11",
     visibility: [
+        "//external/dagger2:__subpackages__",
         "//external/jsoup:__subpackages__",
         "//external/truth:__subpackages__",
         "//external/turbine:__subpackages__",
