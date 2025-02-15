@@ -20,6 +20,7 @@ java_library {
     visibility: [
         "//external/dagger2:__subpackages__",
         "//external/jsoup:__subpackages__",
+        "//external/icing:__subpackages__",
         "//external/truth:__subpackages__",
         "//external/turbine:__subpackages__",
         "//packages/modules:__subpackages__",
